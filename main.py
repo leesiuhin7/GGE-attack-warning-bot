@@ -6,6 +6,7 @@ import threading
 import json
 import time
 import os
+import socket
 from typing import Any
 
 
@@ -135,7 +136,23 @@ def start_attack_listener() -> None:
     listener.start()
 
 
+def fake_socket() -> None:
+    with socket.socket() as server_socket:
+        port = int(os.environ.get("PORT", 10000))
+        server_socket.bind(("0.0.0.0", port))
+        server_socket.listen()
+        server_socket.setblocking(False)
+
+        try:
+            server_socket.accept()
+            with server_socket:
+                pass
+        except BlockingIOError:
+            pass
+
+
 
 if __name__ == "__main__":
+    fake_socket()
     start_attack_listener()
     bot.run(token=TOKEN)
