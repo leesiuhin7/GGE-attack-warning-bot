@@ -6,7 +6,7 @@ import threading
 import json
 import time
 import os
-import socket
+from flask import Flask
 from typing import Any
 
 
@@ -136,23 +136,17 @@ def start_attack_listener() -> None:
     listener.start()
 
 
-def fake_socket() -> None:
-    with socket.socket() as server_socket:
-        port = int(os.environ.get("PORT", 10000))
-        server_socket.bind(("0.0.0.0", port))
-        server_socket.listen()
-        server_socket.setblocking(False)
-
-        try:
-            server_socket.accept()
-            with server_socket:
-                pass
-        except BlockingIOError:
-            pass
-
+def start_flask_server() -> None:
+    port = os.environ.get("PORT", 10000)
+    app = Flask(__name__)
+    flask_thread = threading.Thread(
+        target=app.run,
+        kwargs={"host": "0.0.0.0", "port": port}
+    )
+    flask_thread.start()
 
 
 if __name__ == "__main__":
-    fake_socket()
+    start_flask_server()
     start_attack_listener()
     bot.run(token=TOKEN)
