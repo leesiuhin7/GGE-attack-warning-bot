@@ -6,7 +6,7 @@ import threading
 import json
 import time
 import os
-from flask import Flask
+from flask import Flask, Response
 from typing import Any
 
 
@@ -139,6 +139,13 @@ def start_attack_listener() -> None:
 def start_flask_server() -> None:
     port = os.environ.get("PORT", 10000)
     app = Flask(__name__)
+    
+    app.add_url_rule(
+        "/", 
+        endpoint="respond", 
+        view_func=lambda: Response(status=200)
+    )
+
     flask_thread = threading.Thread(
         target=app.run,
         kwargs={"host": "0.0.0.0", "port": port}
