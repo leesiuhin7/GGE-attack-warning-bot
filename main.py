@@ -65,46 +65,66 @@ def attack_listener() -> None:
             print(e)
             continue
 
-        index = response.json()[1]
+        try:
+            index = response.json()[1]
+        except Exception as e:
+            print(e)
+            continue
 
         for message in response.json()[0]:
             try:
-                info = _decode_message(message)
+                info_list = _decode_message(message)
             except IndexError:
                 continue
             except Exception as e:
                 print(e)
                 continue
             
-            if info is None:
+            if info_list is None:
                 continue
             
-            warning_msg = _format_warning(info)
-            warning_queue.append(warning_msg)
+            for info in info_list:
+                warning_msg = _format_warning(info)
+                warning_queue.append(warning_msg)
 
 
-def _decode_message(message: str) -> None | tuple[Any, ...]:
+def _decode_message(message: str) -> None | list[tuple[Any, ...]]:
     start = message.find("{")
     if start == -1:
         return
     
     data = json.loads(message[start:-1])
 
-    if data["M"][0]["M"]["T"] != 0:
+    info_list = []
+    attack_count = len(data["M"])
+    for i in range(attack_count):
+        try:
+            info = _unpack_data(data["M"][i])
+        except:
+            continue
+
+        if info is not None:
+            info_list.append(info)
+
+    return info_list
+
+
+def _unpack_data(data: dict) -> None | tuple[Any, ...]:
+    if data["M"]["T"] != 0:
         return
     
-    remaining_time = data["M"][0]["M"]["TT"] - data["M"][0]["M"]["PT"]
+    if "GS" not in data:
+        return
+    
+    remaining_time = data["M"]["TT"] - data["M"]["PT"]
 
-    target_x = data["M"][0]["M"]["TA"][1]
-    target_y = data["M"][0]["M"]["TA"][2]
-    target_name = data["M"][0]["M"]["TA"][10]
+    target_x = data["M"]["TA"][1]
+    target_y = data["M"]["TA"][2]
+    target_name = data["M"]["TA"][10]
 
-    attacker_x = data["M"][0]["M"]["SA"][1]
-    attacker_y = data["M"][0]["M"]["SA"][2]
-    attacker_name = data["M"][0]["M"]["SA"][10]
-
-    target_player = data["O"][0]["N"]
-    attacker_player = data["O"][1]["N"]
+    attacker_x = data["M"]["SA"][1]
+    attacker_y = data["M"]["SA"][2]
+    attacker_name = data["M"]["SA"][10]
 
     info = (
         remaining_time,
@@ -113,9 +133,7 @@ def _decode_message(message: str) -> None | tuple[Any, ...]:
         attacker_x,
         attacker_y,
         target_name,
-        attacker_name,
-        target_player,
-        attacker_player
+        attacker_name
     )
     return info
 
@@ -124,7 +142,6 @@ def _format_warning(info: tuple[Any, ...]) -> str:
     message = " ".join([
         "@everyone",
         f"incoming attack in approx. {info[0]}s",
-        f"on \"{info[7]}\" by \"{info[8]}\"",
         f"at \"{info[5]}\" ({info[1]}:{info[2]})",
         f"from \"{info[6]}\" ({info[3]}:{info[4]})"
     ])
