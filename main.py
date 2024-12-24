@@ -141,11 +141,18 @@ def _unpack_data(data: dict) -> None | tuple[Any, ...]:
 def _format_warning(info: tuple[Any, ...]) -> str:
     message = " ".join([
         "@everyone",
-        f"incoming attack in approx. {info[0]}s",
+        f"incoming attack in approx.",
+        _seconds2compound(info[0]),
         f"at \"{info[5]}\" ({info[1]}:{info[2]})",
         f"from \"{info[6]}\" ({info[3]}:{info[4]})"
     ])
     return message
+
+
+def _seconds2compound(seconds: float) -> str:
+    m = seconds // 60
+    s = seconds % 60 // 1
+    return f"{m}m {s}s"
     
 
 def start_attack_listener() -> None:
