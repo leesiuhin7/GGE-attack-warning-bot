@@ -150,9 +150,15 @@ def _format_warning(info: tuple[Any, ...]) -> str:
 
 
 def _seconds2compound(seconds: float) -> str:
-    m = seconds // 60
-    s = seconds % 60 // 1
-    return f"{m}m {s}s"
+    h = seconds // 3600
+    m = seconds // 60 % 60
+    s = seconds // 1 % 60
+    if h != 0:
+        return f"{h}h {m}m {s}s"
+    elif m != 0:
+        return f"{m}m {s}s"
+    else:
+        return f"{s}s"
     
 
 def start_attack_listener() -> None:
